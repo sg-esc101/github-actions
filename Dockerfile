@@ -1,2 +1,3 @@
 FROM ubuntu:latest
-CMD [echo "Hello World", sleep 5000]
+#CMD ["sleep", "5000"]
+CMD ["/bin/bash", "-c", "while true; do echo 'looping...' ; sleep 1; done"]
