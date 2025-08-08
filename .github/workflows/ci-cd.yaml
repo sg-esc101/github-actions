@@ -1,16 +1,32 @@
+# - Runs tests on every pull request to the `main` branch
+# - Builds a Docker image
+# - Pushes the image to DockerHub only when a commit is merged into `main`
 name: CI/CD Pipeline
-
+ 
 on:
     pull_request:
         branches:
             - "main"
-    push:
-        branches:
-            - "main"
+    #push:
+        #branches:
+        #    - "main"
 
 jobs:
-    Build:
+    Test:
         runs-on: ubuntu-latest
+        if: github.event_name == 'pull_request'
+        steps:
+            - 
+                name: install npm
+                run: npm install
+            -
+                name: test npm
+                run: npm test
+
+
+    Build_and_Push:
+        runs-on: ubuntu-latest
+        if: github.event.pull_request.merged == true
         steps:
             - 
                 name: Checkout the repo
