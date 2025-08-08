@@ -1,54 +1,58 @@
-name: Ci-cd pipeline
+name: CI-CD pipeline
+
 on:
-    push:
-        branches:
-            - "main"
-            - "feature*"
-    pull_request:
-        branches:
-            - "main"
-            - "release*"
-            
+  push:
+    branches:
+      - "main"
+      - "feature/**"
+  pull_request:
+    branches:
+      - "main"
+      - "release*"
+  workflow_dispatch:
+    inputs:
+      branch_or_tag:
+        description: "Branch you are deploying"
+        type: choice
+        required: true
+        options:
+          - 'main'
+          - 'feature/my-feature'
+
 jobs:
-    test:
-        runs-on: ${{ matrix.os }}
-        strategy:
-            matrix:
-                os: [ubuntu-latest, centos-latest]
-                version: [16,18]
-        steps:
-            - 
-                name: checking out repo #not needed in my case but lets keep it
-                uses: actions/checkout@v3
-            -
-                name: Setup node 
-                uses: actions/setup-node@v3
-                with:
-                    node-version: ${{ matrix.version }}
-            -
-                name: install npm on runners
-                run: |
-                    npm install
-            -
-                name: test npm
-                run: |
-                    npm test 
-    
-    build_and_push:
-        runs-on: ubuntu-latest
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        steps:
-            -
-                uses: actions/checkout@v3
-            -  
-                name: Login to Dockerhub
-                uses: docker/login-action@v3
-                with:
-                    username: ${{ secrets.DOCKER_USERNAME }}
-                    password: ${{ secrets.DOCKER_PASSWORD }}
-            -
-                name: Build and push
-                uses: docker/build-push-action@v6
-                with:
-                    push: true
-                    tags: user/app:latest
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest] # remove centos-latest unless self-hosted
+        version: [16, 18]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.version }}
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm test
+
+  build_and_push:
+    runs-on: ubuntu-latest
+    if: ${{ 
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && startsWith(inputs.branch_or_tag, 'feature'))
+    }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: user/app:latest
