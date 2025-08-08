@@ -40,10 +40,7 @@ jobs:
 
   build_and_push:
     runs-on: ubuntu-latest
-    if: ${{ 
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && startsWith(inputs.branch_or_tag, 'feature'))
-    }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.branch_or_tag, 'feature')) }}
     steps:
       - uses: actions/checkout@v3
       - name: Login to DockerHub
